@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from loguru import logger
 
 # generate a set of synthetic data using linear regression with added Gaussian noises
-np.random.seed(37)
+np.random.seed(42)
 true_w = 2.0
 true_b = 1.0
 
@@ -37,6 +37,12 @@ val_y = y[val_ids]
 test_x = x[test_ids]
 test_y = y[test_ids]
 
+# scale data to make it zero mean and uni-variant
+scaler = StandardScaler(with_mean=True, with_std=True)
+train_x = scaler.fit_transform(train_x)
+val_x = scaler.fit_transform(val_x)
+test_x = scaler.fit_transform(test_x)
+
 logger.info("training x:")
 logger.info(f"{train_x[:10]}")
 logger.info(f"{train_y[:10]}")
@@ -49,29 +55,30 @@ logger.info("testing x:")
 logger.info(f"{test_x[:10]}")
 logger.info(f"{test_y[:10]}")
 
+b = 0.1
+w = 0.1
+lr = 0.01
+print(f"Initial: true_b = {true_b}, true_w = {true_w}, b = {b}, w = {w}")
 
-b = np.random.randn(1)
-w = np.random.randn(1)
-
-lr = 0.001
-
-prev_loss = None
+all_losses = []
 for iter in range(10000):
     yhat = train_x * w + b
-    error = train_y - yhat
+    error = yhat - train_y
     loss = (error**2).mean()
-    if prev_loss:
-        loss_diff = abs(prev_loss - loss) / max(loss, prev_loss)
-        if loss_diff < 0.0001:
-            print(
-                "loss change is too little, stop the training: prev_loss = {}, loss = {}, diff_% = {}".format(
-                    prev_loss, loss, loss_diff
+    all_losses.append(loss)
+    
+    if iter > 0 and iter % 10 == 0:
+        if all_losses:
+            loss_diff = abs(all_losses[-1] - all_losses[-10]) / max(all_losses[-1], all_losses[-10])
+            if loss_diff < 0.00000000001:
+                print(
+                    "loss change is too little, stop the training: current loss = {}, loss before = {}, diff_% = {}".format(
+                        all_losses[-1], all_losses[-10], loss_diff
+                    )
                 )
-            )
-            break
-    print(f"iteration {iter}: loss = {loss}")
+                break
+    print(f"iteration {iter}: loss = {all_losses[-1]}")
 
-    prev_loss = loss
     b_grad = 2 * error.mean()
     w_grad = 2 * (train_x * error).mean()
 
