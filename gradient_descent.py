@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 #
 # It then trains the linear model with hyper-parameter tunning (learning rate) using validation data, 
 # and then plot the data and model on training, validation and testing data.
+# 
+# Note that this approach does not treat validation data as a part of training data (e.g. k-fold cross validation)
+# to tune the hyper parameter.
 #
 # Data scaled with zero-mean and uni-variance with training model parameters. Data is scaled back to
 # original scale when doing plotting.
