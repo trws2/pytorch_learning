@@ -3,6 +3,16 @@ from sklearn.preprocessing import StandardScaler
 from loguru import logger
 import matplotlib.pyplot as plt
 
+# This script generate synthetic data using linear regression model with added Gaussian noises and 
+# split into training, validation, and testing data. 
+#
+# It then trains the linear model with hyper-parameter tunning (learning rate) using validation data, 
+# and then plot the data and model on training, validation and testing data.
+#
+# Data scaled with zero-mean and uni-variance with training model parameters. Data is scaled back to
+# original scale when doing plotting.
+
+
 DEBUG = False
 np.random.seed(42)
 TRUE_W = 2.0
@@ -18,12 +28,8 @@ def generate_date(debug=False):
     y = y + noise
 
     # split them into train, val, and test
-    ids = np.arange(num_examples)
-    print(ids)
-        
+    ids = np.arange(num_examples)        
     np.random.shuffle(ids)
-        
-    print(ids)
 
     num_examples_train = 900
     num_examples_val = 100
@@ -85,8 +91,8 @@ def generate_date(debug=False):
 # train a linear regression model with gradient descent using mean square loss function
 def train(lr=0.1, debug=False):
     # initial parameter values
-    b = 1.0
-    w = 2.0
+    b = 0.1
+    w = 0.1
     if debug:
         logger.info(f"Initial: true_b = {TRUE_B}, true_w = {TRUE_W}, b = {b}, w = {w}")
 
@@ -139,7 +145,7 @@ def train(lr=0.1, debug=False):
     return w, b, loss
 
 
-def eval(x, y, w, b, x_scalar=None, plot=False, train_x=None, train_x_scalar=None):
+def eval(x, y, w, b, x_scalar=None, plot=False, title="", train_x=None, train_x_scalar=None):
     error = x * w + b - y
     loss = (error**2).mean()
 
@@ -169,7 +175,7 @@ def eval(x, y, w, b, x_scalar=None, plot=False, train_x=None, train_x_scalar=Non
         else:
             plt.plot(x_line, y_line, color="red", label="Regression Line")
 
-        plt.title("Data Points and Regression Line")
+        plt.title(f"{title} and Regression Line")
         plt.xlabel("x")
         plt.ylabel("y")
         plt.legend()
@@ -194,7 +200,7 @@ def eval(x, y, w, b, x_scalar=None, plot=False, train_x=None, train_x_scalar=Non
 all_lrs = [1, 0.1, 0.05, 0.01, 0.0001, 0.00001]
 results = {}
 for lr in all_lrs:
-    w, b, train_loss = train(lr, debug=False)
+    w, b, train_loss = train(lr, debug=DEBUG)
     val_loss = eval(val_x, val_y, w, b, x_scalar=scaler_val_x)
     results[lr] = {
         "w": w,
@@ -209,6 +215,6 @@ final_parameters = [(x["w"], x["b"]) for x in results.values() if x["val_loss"] 
 final_w, final_b = final_parameters[0][0], final_parameters[0][1]
 
 # final result
-train_loss = eval(train_x, train_y, final_w, final_b, x_scalar=scaler_train_x, plot=True, train_x=train_x, train_x_scalar=scaler_train_x)
-val_loss = eval(val_x, val_y, final_w, final_b, x_scalar=scaler_val_x, plot=True, train_x=train_x, train_x_scalar=scaler_train_x, plot=True)
-test_loss = eval(test_x, test_y, final_w, final_b, x_scalar=scaler_test_x, plot=True, train_x=train_x, train_x_scalar=scaler_train_x, plot=True)
+train_loss = eval(train_x, train_y, final_w, final_b, x_scalar=scaler_train_x, plot=True, title="Training Data", train_x=train_x, train_x_scalar=scaler_train_x)
+val_loss = eval(val_x, val_y, final_w, final_b, x_scalar=scaler_val_x, plot=True, title="Validation Data", train_x=train_x, train_x_scalar=scaler_train_x)
+test_loss = eval(test_x, test_y, final_w, final_b, x_scalar=scaler_test_x, plot=True, title="Testing Data", train_x=train_x, train_x_scalar=scaler_train_x)
